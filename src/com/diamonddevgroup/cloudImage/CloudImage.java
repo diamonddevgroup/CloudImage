@@ -13,15 +13,16 @@ import com.diamonddevgroup.cloudImage.utils.StringUtils;
  */
 public class CloudImage {
 
-    private String cloudURL;
+    String cloudURL = "";
 
-    private String format;
-    private String resourceType;
-    private String cacheName;
-    private boolean makeRound;
-    private int radius = 0;
-    boolean isFacebookImage;
-    private Manipulator manipulator;
+    String format = "";
+    String cacheName = "";
+    String resourceType = "";
+    boolean makeRound = false;
+    int radius = 0;
+    boolean isFacebookImage = false;
+    Manipulator manipulator = null;
+    private final int offset = -5;
 
     /**
      * CloudImage constructor with the cloud URL argument
@@ -100,6 +101,10 @@ public class CloudImage {
         return this;
     }
 
+    public String generate() {
+        return generate(null);
+    }
+
     private String generate(String source) {
         this.format = "format=" + format(source);
         source = "image=" + source;
@@ -116,33 +121,33 @@ public class CloudImage {
         return prefix;
     }
 
-    public Image image(EncodedImage placeholder, String source) {
+    public Image image(Image placeholder, String source) {
+        EncodedImage encImage = EncodedImage.createFromImage(placeholder, false);
+
         Manipulator t = this.manipulator();
         if (t == null) {
             t = new Manipulator();
             this.manipulator(t);
         }
-        t.width(placeholder.getWidth());
-        t.height(placeholder.getHeight());
+        t.width(encImage.getWidth() + offset);
+        t.height(encImage.getHeight() + offset);
+
         String url = generate(source);
         String cache = this.cacheName == null ? url : this.cacheName;
 
-        if (this.makeRound) {
-            Image roundMask = Image.createImage(placeholder.getWidth(), placeholder.getHeight(), 0xff000000);
+        if (this.radius > 0) {
+            Image roundMask = Image.createImage(encImage.getWidth(), encImage.getHeight(), 0xff000000);
             Graphics gr = roundMask.getGraphics();
             gr.setColor(0xffffff);
-            gr.fillArc(0, 0, placeholder.getWidth(), placeholder.getHeight(), 0, this.radius);
 
-            return URLImage.createToStorage(placeholder, cache, url, URLImage.createMaskAdapter(roundMask));
-        } else if (this.radius > 0) {
-            Image roundMask = Image.createImage(placeholder.getWidth(), placeholder.getHeight(), 0xff000000);
-            Graphics gr = roundMask.getGraphics();
-            gr.setColor(0xffffff);
-            gr.fillRoundRect(0, 0, placeholder.getWidth(), placeholder.getHeight(), this.radius, this.radius);
+            if (this.makeRound) {
+                gr.fillArc(0, 0, encImage.getWidth(), encImage.getHeight(), 0, this.radius);
+            } else {
+                gr.fillRoundRect(0, 0, encImage.getWidth(), encImage.getHeight(), this.radius, this.radius);
+            }
 
-            return URLImage.createToStorage(placeholder, cache, url, URLImage.createMaskAdapter(roundMask));
-        } else {
-            return URLImage.createToStorage(placeholder, cache, url);
+            return URLImage.createToStorage(encImage, cache, url, URLImage.createMaskAdapter(roundMask));
         }
+        return URLImage.createToStorage(encImage, cache, url);
     }
 }

@@ -70,9 +70,6 @@ public class Manipulator {
      * @return Manipulator with path set
      */
     public Manipulator path(String path) {
-        if (!path.startsWith("/") && path.trim().length() != 0) {
-            throw new IllegalArgumentException("Path should start with '/'");
-        }
         return param("path", path);
     }
 
